@@ -72,6 +72,7 @@ function App() {
     }
     setInboxMessages(messages);
     setInboxTotalPages(totalPages);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -95,6 +96,7 @@ function App() {
     }
     setOutboxMessages(messages);
     setOutboxTotalPages(totalPages);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -163,7 +165,7 @@ function App() {
   const handleFetchUserPage = (page) => {
     return new Promise(async (resolve, reject) => {
       setLoading(true);
-      const data = { current_user_id: othent.getSyncUserDetails().sub, page: page, page_size: 10 };
+      const data = { current_user_id: othent.getSyncUserDetails().sub, page: page, page_size: 5 };
       const VITE_APP_AO_ORCHESTRATOR_ID = import.meta.env.VITE_APP_AO_ORCHESTRATOR_ID;
       try {
         const txData = await dryrun({
@@ -191,7 +193,7 @@ function App() {
   const handleFetchInboxPage = (page) => {
     return new Promise(async (resolve, reject) => {
       setLoading(true);
-      const data = { user_id: othent.getSyncUserDetails().sub, page: page, page_size: 10 };
+      const data = { user_id: othent.getSyncUserDetails().sub, page: page, page_size: 5 };
       try {
         const txData = await dryrun({
           process: user.data_node_id,
@@ -201,15 +203,12 @@ function App() {
         if(txData.Messages.length > 0) {
           const inboxPage = JSON.parse(txData.Messages[0].Data);
           console.log("Fetched User Inbox Page", inboxPage);
-          setLoading(false);
           resolve({messages: inboxPage.messages, totalPages: inboxPage.total_size});
         } else {
-          setLoading(false);
           reject("No user inbox page found");
         }
       } catch (error) {
         console.error("Error fetching user inbox page:", error);
-        setLoading(false);
         reject(error);
       }
     });
@@ -218,7 +217,7 @@ function App() {
   const handleFetchOutboxPage = (page) => {
     return new Promise(async (resolve, reject) => {
       setLoading(true);
-      const data = { user_id: othent.getSyncUserDetails().sub, page: page, page_size: 10 };
+      const data = { user_id: othent.getSyncUserDetails().sub, page: page, page_size: 5 };
       try {
         const txData = await dryrun({
           process: user.data_node_id,
@@ -228,15 +227,12 @@ function App() {
         if(txData.Messages.length > 0) {
           const outboxPage = JSON.parse(txData.Messages[0].Data);
           console.log("Fetched User Outbox Page", outboxPage);
-          setLoading(false);
           resolve({messages: outboxPage.messages, totalPages: outboxPage.total_size});
         } else {
-          setLoading(false);
           reject("No user outbox page found");
         }
       } catch (error) {
         console.error("Error fetching user outbox page:", error);
-        setLoading(false);
         reject(error);
       }
     });
@@ -636,9 +632,9 @@ const ao_disconnect = async () => {
                   <UserRegistration onRegister={handleUserRegistration} />
                 </>
               )}            
-              <RegisteredUsers users={users} currentPage={usersCurrentPage} totalPages={Math.ceil(usersTotalPages / 10)} handleNextPage={handleUsersNextPage} handlePreviousPage={handleUsersPreviousPage} sendEncryptIntegerValue={sendEncryptIntegerValue}/>
-              <MessagesDashboard inboxMessages={inboxMessages} inboxCurrentPage={inboxCurrentPage} inboxTotalPages={Math.ceil(inboxTotalPages / 10)} handleInboxNextPage={handleInboxNextPage} handleInboxPreviousPage={handleInboxPreviousPage} sendReply={sendReply}
-                                outboxMessages={outboxMessages} outboxCurrentPage={outboxCurrentPage} outboxTotalPages={Math.ceil(outboxTotalPages / 10)} handleOutboxNextPage={handleOutboxNextPage} handleOutboxPreviousPage={handleOutboxPreviousPage} />
+              <RegisteredUsers users={users} currentPage={usersCurrentPage} totalPages={Math.ceil(usersTotalPages / 5)} handleNextPage={handleUsersNextPage} handlePreviousPage={handleUsersPreviousPage} sendEncryptIntegerValue={sendEncryptIntegerValue}/>
+              <MessagesDashboard inboxMessages={inboxMessages} inboxCurrentPage={inboxCurrentPage} inboxTotalPages={Math.ceil(inboxTotalPages / 5)} handleInboxNextPage={handleInboxNextPage} handleInboxPreviousPage={handleInboxPreviousPage} sendReply={sendReply}
+                                outboxMessages={outboxMessages} outboxCurrentPage={outboxCurrentPage} outboxTotalPages={Math.ceil(outboxTotalPages / 5)} handleOutboxNextPage={handleOutboxNextPage} handleOutboxPreviousPage={handleOutboxPreviousPage} />
             </>
           ) : (
             <>

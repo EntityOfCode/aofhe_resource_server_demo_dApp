@@ -51,7 +51,7 @@ const RegisteredUsers = ({ users, currentPage, totalPages, handleNextPage, handl
                   type="number"
                   value={valueToEncrypt}
                   onChange={(e) => setValueToEncrypt(parseInt(e.target.value))}
-                  className="border rounded py-1 px-2 mr-2"
+                  className="border rounded py-1 px-2 mr-2 text-black"
                 />
                 <button
                   onClick={() => sendEncryptIntegerValue(user, valueToEncrypt)}

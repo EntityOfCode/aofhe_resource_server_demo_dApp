@@ -1,4 +1,4 @@
-const Inbox = ({ messages, inboxCurrentPage, inboxTotalPages, handleNextPage, handlePreviousPage, sendReply }) => {
+const Inbox = ({ messages, currentPage, totalPages, handleNextPage, handlePreviousPage, sendReply }) => {
   const handleNext = () => {
     handleNextPage();
   };
@@ -39,15 +39,15 @@ const Inbox = ({ messages, inboxCurrentPage, inboxTotalPages, handleNextPage, ha
       <div className="flex justify-between items-center w-full max-w-xl mt-2">
         <button
           onClick={handlePrevious}
-          disabled={inboxCurrentPage === 1}
+          disabled={currentPage === 1}
           className="bg-gray-600 hover:bg-gray-500 text-white py-1 px-3 rounded disabled:opacity-50"
         >
           Previous
         </button>
-        <span className="text-gray-300">Page {inboxCurrentPage} of {inboxTotalPages}</span>
+        <span className="text-gray-300">Page {currentPage} of {totalPages}</span>
         <button
           onClick={handleNext}
-          disabled={inboxCurrentPage === inboxTotalPages}
+          disabled={currentPage === totalPages}
           className="bg-gray-600 hover:bg-gray-500 text-white py-1 px-3 rounded disabled:opacity-50"
         >
           Next

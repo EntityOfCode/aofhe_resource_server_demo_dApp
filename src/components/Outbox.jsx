@@ -1,4 +1,4 @@
-const Outbox = ({ messages, outboxCurrentPage, outboxTotalPages, handleNextPage, handlePreviousPage }) => {
+const Outbox = ({ messages, currentPage, totalPages, handleNextPage, handlePreviousPage }) => {
     const handleNext = () => {
       handleNextPage();
     };
@@ -32,15 +32,15 @@ const Outbox = ({ messages, outboxCurrentPage, outboxTotalPages, handleNextPage,
         <div className="flex justify-between items-center w-full max-w-2xl mt-4">
           <button
             onClick={handlePrevious}
-            disabled={outboxCurrentPage === 1}
+            disabled={currentPage === 1}
             className="bg-gray-600 hover:bg-gray-500 text-white py-1 px-3 rounded disabled:opacity-50"
           >
             Previous
           </button>
-          <span className="text-gray-300">Page {outboxCurrentPage} of {outboxTotalPages}</span>
+          <span className="text-gray-300">Page {currentPage} of {totalPages}</span>
           <button
             onClick={handleNext}
-            disabled={outboxCurrentPage === outboxTotalPages}
+            disabled={currentPage === totalPages}
             className="bg-gray-600 hover:bg-gray-500 text-white py-1 px-3 rounded disabled:opacity-50"
           >
             Next

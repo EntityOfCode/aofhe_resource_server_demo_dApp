@@ -285,6 +285,7 @@ function App() {
       console.log("Create Request Reply Message ID", createRequestReplyMsgId);
       }
     await fetchInbox(inboxCurrentPage);
+    // setInboxCurrentPage(inboxCurrentPage);
     setLoading(false);
   };
 
@@ -390,6 +391,7 @@ const sendEncryptIntegerValue = async (toUser, value) => {
         });
         console.log("Create Outbox Message ID", createOutboxMsgId);
         await fetchOutbox(outboxCurrentPage);
+        // setOutboxCurrentPage(outboxCurrentPage);
         setLoading(false);
       }  
     }

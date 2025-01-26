@@ -37,7 +37,6 @@ const Loader = () => {
                 <div className="waving">
                     <img src={logo} alt="EOC" className="w-24 h-24" />
                     <p className="text-lg font-semibold text-gray-700">
-                        FHE Processing...
                     </p>
                 </div>
                 <p className="text-sm text-gray-500">

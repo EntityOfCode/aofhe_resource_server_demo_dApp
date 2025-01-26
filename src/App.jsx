@@ -636,9 +636,9 @@ const ao_disconnect = async () => {
                   <UserRegistration onRegister={handleUserRegistration} />
                 </>
               )}            
-              <RegisteredUsers users={users} currentPage={usersCurrentPage} totalPages={usersTotalPages} handleNextPage={handleUsersNextPage} handlePreviousPage={handleUsersPreviousPage} sendEncryptIntegerValue={sendEncryptIntegerValue}/>
-              <MessagesDashboard inboxMessages={inboxMessages} inboxCurrentPage={inboxCurrentPage} inboxTotalPages={inboxTotalPages} handleInboxNextPage={handleInboxNextPage} handleInboxPreviousPage={handleInboxPreviousPage} sendReply={sendReply}
-                                outboxMessages={outboxMessages} outboxCurrentPage={outboxCurrentPage} outboxTotalPages={outboxTotalPages} handleOutboxNextPage={handleOutboxNextPage} handleOutboxPreviousPage={handleOutboxPreviousPage} />
+              <RegisteredUsers users={users} currentPage={usersCurrentPage} totalPages={Math.ceil(usersTotalPages / 10)} handleNextPage={handleUsersNextPage} handlePreviousPage={handleUsersPreviousPage} sendEncryptIntegerValue={sendEncryptIntegerValue}/>
+              <MessagesDashboard inboxMessages={inboxMessages} inboxCurrentPage={inboxCurrentPage} inboxTotalPages={Math.ceil(inboxTotalPages / 10)} handleInboxNextPage={handleInboxNextPage} handleInboxPreviousPage={handleInboxPreviousPage} sendReply={sendReply}
+                                outboxMessages={outboxMessages} outboxCurrentPage={outboxCurrentPage} outboxTotalPages={Math.ceil(outboxTotalPages / 10)} handleOutboxNextPage={handleOutboxNextPage} handleOutboxPreviousPage={handleOutboxPreviousPage} />
             </>
           ) : (
             <>

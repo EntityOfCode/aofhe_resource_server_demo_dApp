@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import UserRegistration from './components/UserRegistration';
 import RegisteredUsers from './components/RegisteredUsers';
-import Inbox from './components/Inbox';
-import Outbox from './components/Outbox';
+import MessagesDashboard from './components/MessagesDashboard';
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import Loader from './components/Loader'
@@ -246,6 +245,7 @@ function App() {
     // connect/disconnect function
     const toggleConnection = () => {
       setLoading(true)
+      // ao_disconnect()
       if (isConnected) {
           ao_disconnect()
       } else {
@@ -635,8 +635,8 @@ const ao_disconnect = async () => {
                 </>
               )}            
               <RegisteredUsers users={users} currentPage={usersCurrentPage} totalPages={usersTotalPages} handleNextPage={handleUsersNextPage} handlePreviousPage={handleUsersPreviousPage} sendEncryptIntegerValue={sendEncryptIntegerValue}/>
-              <Inbox messages={inboxMessages} currentPage={inboxCurrentPage} totalPages={inboxTotalPages} handleNextPage={handleInboxNextPage} handlePreviousPage={handleInboxPreviousPage} sendReply={sendReply}/>
-              <Outbox messages={outboxMessages} currentPage={outboxCurrentPage} totalPages={outboxTotalPages} handleNextPage={handleOutboxNextPage} handlePreviousPage={handleOutboxPreviousPage} />
+              <MessagesDashboard inboxMessages={inboxMessages} inboxCurrentPage={inboxCurrentPage} inboxTotalPages={inboxTotalPages} handleInboxNextPage={handleInboxNextPage} handleInboxPreviousPage={handleInboxPreviousPage} sendReply={sendReply}
+                                outboxMessages={outboxMessages} outboxCurrentPage={outboxCurrentPage} outboxTotalPages={outboxTotalPages} handleOutboxNextPage={handleOutboxNextPage} handleOutboxPreviousPage={handleOutboxPreviousPage} />
             </>
           ) : (
             <>
@@ -649,7 +649,7 @@ const ao_disconnect = async () => {
           </> 
           )}
         </div>
-        <Footer />
+        {/* <Footer /> */}
       </div>
     </>
   );

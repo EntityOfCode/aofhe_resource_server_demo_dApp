@@ -13,7 +13,13 @@ const Outbox = ({ messages, outboxCurrentPage, outboxTotalPages, handleNextPage,
         <ul>
           {messages.map((message, index) => (
             <li key={index}>
-              To: {message.receiverId}, Message: {message.message}, Timestamp: {message.timestamp}
+              To: {message.receiverId}, Message: {message.plainMessage}, Timestamp: {message.timestamp}
+              {message.replies.replies.length > 0 && (
+                <>
+                    , Reply: {message.replies.replies[0].plainMessage}       
+                </> 
+            )}
+
             </li>
           ))}
         </ul>

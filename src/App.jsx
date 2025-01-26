@@ -61,6 +61,16 @@ function App() {
 
   const fetchInbox = async (page) => {
     const { messages, totalPages } = await handleFetchInboxPage(page);
+    for(let i = 0; i < messages.length; i++) {
+      const decryptedValue = await decryptIntegerValue(messages[i].message);
+      messages[i]['plainMessage'] = decryptedValue;
+      const senderUserDetails = await getUserDetailsById(messages[i].sender_id);
+      messages[i]['senderId'] = senderUserDetails.nickname ? senderUserDetails.nickname : senderUserDetails.user_id;
+      for(let k = 0; k < messages[i].replies.replies.length; k++) {
+        const decryptedReplyValue = await decryptIntegerValue(messages[i].replies.replies[k].message);
+        messages[i].replies.replies[k]['plainMessage'] = decryptedReplyValue;
+      }
+    }
     setInboxMessages(messages);
     setInboxTotalPages(totalPages);
   }
@@ -74,6 +84,16 @@ function App() {
 
   const fetchOutbox = async (page) => {
     const { messages, totalPages } = await handleFetchOutboxPage(page);
+    for(let i = 0; i < messages.length; i++) {
+      const decryptedValue = await decryptIntegerValue(messages[i].message);
+      messages[i]['plainMessage'] = decryptedValue;
+      const receiverUserDetails = await getUserDetailsById(messages[i].recipient_id);
+      messages[i]['receiverId'] = receiverUserDetails.nickname ? receiverUserDetails.nickname : receiverUserDetails.user_id;
+      for(let k = 0; k < messages[i].replies.replies.length; k++) {
+        const decryptedReplyValue = await decryptIntegerValue(messages[i].replies.replies[k].message);
+        messages[i].replies.replies[k]['plainMessage'] = decryptedReplyValue;
+      }
+    }
     setOutboxMessages(messages);
     setOutboxTotalPages(totalPages);
   }
@@ -233,12 +253,39 @@ function App() {
       }
   }
 
-  const sendMessage = (receiverId, message) => {
-    // Implementation will be added later
-  };
 
-  const sendReply = (originalMessageId, message) => {
+  const sendReply = async (originalMessage) => {
     // Implementation will be added later
+    setLoading(true);
+    const walletSing = await getSinger();
+    console.log("Original Message", originalMessage);
+    const replyData = {reply_id: originalMessage.inbox_id, inbox_id: originalMessage.inbox_id, user_id: user.user_id, recipient_id: originalMessage.sender_id, message: originalMessage.message};
+    const createReplyMsgId = await message({ 
+      process: user.data_node_id,
+      signer: createDataItemSigner(walletSing),
+      data: JSON.stringify(replyData),
+      tags: [{ name: 'Action', value: 'InsertReplyMessage' }],
+    });
+    console.log("Create Reply Message ID", createReplyMsgId);
+    const toUser = await getUserDetailsById(originalMessage.sender_id);
+    const toUserEncryptedValueTx = await dryrun({
+      process: toUser.crypto_node_id,
+      data: originalMessage.plainMessage,
+      tags: [{ name: 'Action', value: 'EncryptIntegerValue' }],
+    });
+    if(toUserEncryptedValueTx.Messages.length > 0) {
+      const toUserEncryptedValue = toUserEncryptedValueTx.Messages[0].Data;
+      const requestReplyData = {reply_id: originalMessage.inbox_id, inbox_id: originalMessage.inbox_id, user_id: originalMessage.sender_id, recipient_id: user.user_id, message: toUserEncryptedValue};
+      const createRequestReplyMsgId = await message({ 
+        process: toUser.data_node_id,
+        signer: createDataItemSigner(walletSing),
+        data: JSON.stringify(requestReplyData),
+        tags: [{ name: 'Action', value: 'InsertReplyMessage' }],
+      });
+      console.log("Create Request Reply Message ID", createRequestReplyMsgId);
+      }
+    await fetchInbox(inboxCurrentPage);
+    setLoading(false);
   };
 
   const ao_connect = async () => {
@@ -267,7 +314,11 @@ function App() {
 }
 
 const getUserDetails = async () => {
-  const data = {user_id: othent.getSyncUserDetails().sub};
+  return await getUserDetailsById(othent.getSyncUserDetails().sub);
+}
+
+const getUserDetailsById = async (user_id) => {
+  const data = {user_id: user_id};
   const userDetails = await dryrun({
       process: import.meta.env.VITE_APP_AO_ORCHESTRATOR_ID,
       data: JSON.stringify(data),
@@ -302,6 +353,7 @@ const getSinger = () => {
 
 const sendEncryptIntegerValue = async (toUser, value) => {
   //todo: implement this function
+  setLoading(true);
   const uuid = uuidv4();
   console.log("Generated UUID:", uuid);
     const userEncryptedValueTx = await dryrun({
@@ -320,6 +372,25 @@ const sendEncryptIntegerValue = async (toUser, value) => {
         const toUserEncryptedValue = toUserEncryptedValueTx.Messages[0].Data;
         const decryptedValue = await decryptIntegerValue(userEncryptedValue);
         console.log("Decrypted Value:", decryptedValue);
+        const walletSing = await getSinger();
+        const inboxData = {inbox_id : uuid, user_id: toUser.user_id, sender_id: user.user_id, message: userEncryptedValue};
+        const outboxData = {outbox_id : uuid, user_id: user.user_id, recipient_id: toUser.user_id, message: toUserEncryptedValue};
+        const createInboxMsgId = await message({ 
+          process: toUser.data_node_id,
+          signer: createDataItemSigner(walletSing),
+          data: JSON.stringify(inboxData),
+          tags: [{ name: 'Action', value: 'InsertInboxMessage' }],
+        });
+        console.log("Create Inbox Message ID", createInboxMsgId);
+        const createOutboxMsgId = await message({ 
+          process: user.data_node_id,
+          signer: createDataItemSigner(walletSing),
+          data: JSON.stringify(outboxData),
+          tags: [{ name: 'Action', value: 'InsertOutboxMessage' }],
+        });
+        console.log("Create Outbox Message ID", createOutboxMsgId);
+        await fetchOutbox(outboxCurrentPage);
+        setLoading(false);
       }  
     }
 }  
@@ -334,7 +405,7 @@ const decryptIntegerValue = async (encryptedValue) => {
     tags: [
         { name: 'Action', value: 'DecryptIntegerValue' },
         { name: 'id_token', value: id_token },
-        { name: 'jkws', value: jwksBase64 },
+        { name: 'jwks', value: jwksBase64 },
     ],
   });
   return decryptedValue.Messages[0].Data;
@@ -564,7 +635,7 @@ const ao_disconnect = async () => {
                 </>
               )}            
               <RegisteredUsers users={users} currentPage={usersCurrentPage} totalPages={usersTotalPages} handleNextPage={handleUsersNextPage} handlePreviousPage={handleUsersPreviousPage} sendEncryptIntegerValue={sendEncryptIntegerValue}/>
-              <Inbox messages={inboxMessages} currentPage={inboxCurrentPage} totalPages={inboxTotalPages} handleNextPage={handleInboxNextPage} handlePreviousPage={handleInboxPreviousPage} />
+              <Inbox messages={inboxMessages} currentPage={inboxCurrentPage} totalPages={inboxTotalPages} handleNextPage={handleInboxNextPage} handlePreviousPage={handleInboxPreviousPage} sendReply={sendReply}/>
               <Outbox messages={outboxMessages} currentPage={outboxCurrentPage} totalPages={outboxTotalPages} handleNextPage={handleOutboxNextPage} handlePreviousPage={handleOutboxPreviousPage} />
             </>
           ) : (

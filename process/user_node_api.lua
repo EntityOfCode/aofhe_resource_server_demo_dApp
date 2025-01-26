@@ -260,7 +260,7 @@ Handlers.add(
         -- For each outbox message, get the replies
         for _, message in ipairs(outbox_result.messages) do
             local replies_result = json.decode(get_replies_by_inbox_id(message.outbox_id))
-            message.replies = replies_result.replies
+            message.replies = replies_result
         end
 
         -- Send a response back to the caller
@@ -280,16 +280,22 @@ Handlers.add(
         local page_data = json.decode(msg.Data)
 
         -- Call the get_inbox_page function to retrieve the inbox messages
-        local result = get_inbox_page(
+        local result = json.decode(get_inbox_page(
             page_data.user_id,
             page_data.page,
             page_data.page_size
-        )
+        ))
 
+        -- For each outbox message, get the replies
+        for _, message in ipairs(result.messages) do
+            local replies_result = json.decode(get_replies_by_inbox_id(message.inbox_id))
+            message.replies = replies_result
+        end
+        
         -- Send a response back to the caller
         ao.send({
             Target = msg.From,
-            Data = result
+            Data = json.encode(result)
         })
     end
 )

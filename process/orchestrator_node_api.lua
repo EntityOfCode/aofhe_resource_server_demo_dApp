@@ -52,7 +52,7 @@ USER_INBOX = [[
 
 -- UserReplies Table Definition
 USER_REPLIES = [[
-    CREATE TABLE IF NOT EXISTS UserReplies (§
+    CREATE TABLE IF NOT EXISTS UserReplies (
         reply_id TEXT PRIMARY KEY,    -- String ID
         inbox_id TEXT NOT NULL,       -- Associated inbox ID
         user_id TEXT NOT NULL,        -- Associated user ID

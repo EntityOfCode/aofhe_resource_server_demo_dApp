@@ -33,7 +33,7 @@ Handlers.add(
         local_s["ao_sender"] = msg.From
         print(local_s)
         if local_s["data"] then
-        Tfhe.generateSecretKey(json.decode(local_s["data"]).id_token, json.decode(local_s["data"]).jkws)      
+        Tfhe.generateSecretKey(json.decode(local_s["data"]).id_token, json.decode(local_s["data"]).jwks)      
         end
         ao.send(
             {
@@ -81,7 +81,7 @@ Handlers.add(
     function(msg)
         -- local dataString = msg.Data -- Assuming msg.Data is a string representation of a number
         -- local dataNumber = tonumber(dataString)
-        local local_s = Tfhe.decryptInteger(msg.Data, "", msg.Tags.id_token, msg.Tags.jkws)
+        local local_s = Tfhe.decryptInteger(msg.Data, "", msg.Tags.id_token, msg.Tags.jwks)
         if local_s then
             ao.send(
                 {

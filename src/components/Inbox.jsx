@@ -1,4 +1,4 @@
-const Inbox = ({ messages, inboxCurrentPage, inboxTotalPages, handleNextPage, handlePreviousPage }) => {
+const Inbox = ({ messages, inboxCurrentPage, inboxTotalPages, handleNextPage, handlePreviousPage, sendReply }) => {
   const handleNext = () => {
     handleNextPage();
   };
@@ -13,7 +13,19 @@ const Inbox = ({ messages, inboxCurrentPage, inboxTotalPages, handleNextPage, ha
       <ul>
         {messages.map((message, index) => (
           <li key={index}>
-            From: {message.senderId}, Message: {message.message}, Timestamp: {message.timestamp}
+            From: {message.senderId}, Message: {message.plainMessage}, Timestamp: {message.timestamp},
+            {message.replies.replies.length > 0 ? (
+              <>
+                , Reply: {message.replies.replies[0].plainMessage}
+              </>
+            ) : (
+              <>
+                <button onClick={() => sendReply(message)} className="bg-sky-600 text-white py-2 px-4 rounded">
+                  Reply
+                </button>
+              </>
+            )}
+
           </li>
         ))}
       </ul>

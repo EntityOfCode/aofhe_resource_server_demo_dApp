@@ -127,6 +127,68 @@ local function get_inbox_page(user_id, page, page_size)
     return json.encode(result)
 end
 
+-- Function to add a favorite user
+local function add_favorite_user(favorite_id, user_id, favorite_user_id)
+    local stmt = db:prepare([[
+        INSERT INTO UserFavorites (favorite_id, user_id, favorite_user_id)
+        VALUES (?, ?, ?)
+    ]])
+    stmt:bind_values(favorite_id, user_id, favorite_user_id)
+    stmt:step()
+    stmt:finalize()
+    return favorite_id
+end
+
+-- Function to get favorite users for a user with pagination
+local function get_favorite_users(user_id, page, page_size)
+    local offset = (page - 1) * page_size
+    local stmt = db:prepare([[
+        SELECT favorite_id, favorite_user_id, created_at
+        FROM UserFavorites
+        WHERE user_id = ?
+        LIMIT ? OFFSET ?
+    ]])
+    local total_stmt = db:prepare([[
+        SELECT COUNT(*) as total
+        FROM UserFavorites
+        WHERE user_id = ?
+    ]])
+    local result = { page = page, total_size = 0, favorites = {} }
+
+    if stmt and total_stmt then
+        total_stmt:bind_values(user_id)
+        for row in total_stmt:nrows() do
+            result.total_size = row.total
+        end
+        total_stmt:finalize()
+
+        stmt:bind_values(user_id, page_size, offset)
+        for row in stmt:nrows() do
+            table.insert(result.favorites, {
+                favorite_id = row.favorite_id,
+                favorite_user_id = row.favorite_user_id,
+                created_at = row.created_at
+            })
+        end
+        stmt:finalize()
+    else
+        error("Failed to prepare statement")
+    end
+
+    return json.encode(result)
+end
+
+-- Function to remove a favorite user
+local function remove_favorite_user(favorite_id)
+    local stmt = db:prepare([[
+        DELETE FROM UserFavorites
+        WHERE favorite_id = ?
+    ]])
+    stmt:bind_values(favorite_id)
+    stmt:step()
+    stmt:finalize()
+end
+
 -- Handler Definitions
 
 -- InitDb Handler
@@ -297,5 +359,38 @@ Handlers.add(
             Target = msg.From,
             Data = json.encode(result)
         })
+    end
+)
+
+-- AddFavoriteUser Handler
+Handlers.add(
+    "AddFavoriteUser",
+    Handlers.utils.hasMatchingTag("Action", "AddFavoriteUser"),
+    function(msg)
+        local data = json.decode(msg.Data)
+        local favorite_id = add_favorite_user(data.favorite_id, data.user_id, data.favorite_user_id)
+        ao.send({ Target = msg.From, Data = json.encode({ favorite_id = favorite_id }) })
+    end
+)
+
+-- GetFavoriteUsers Handler with pagination
+Handlers.add(
+    "GetFavoriteUsers",
+    Handlers.utils.hasMatchingTag("Action", "GetFavoriteUsers"),
+    function(msg)
+        local data = json.decode(msg.Data)
+        local result = get_favorite_users(data.user_id, data.page, data.page_size)
+        ao.send({ Target = msg.From, Data = result })
+    end
+)
+
+-- RemoveFavoriteUser Handler
+Handlers.add(
+    "RemoveFavoriteUser",
+    Handlers.utils.hasMatchingTag("Action", "RemoveFavoriteUser"),
+    function(msg)
+        local data = json.decode(msg.Data)
+        remove_favorite_user(data.favorite_id)
+        ao.send({ Target = msg.From, Data = "Favorite user removed" })
     end
 )

@@ -36,6 +36,10 @@ function App() {
   const [usersCurrentPage, setUsersCurrentPage] = useState(0);
   const [usersTotalPages, setUsersTotalPages] = useState(1);
 
+  const [favoriteUsers, setFavoriteUsers] = useState([]);
+  const [favoriteUsersCurrentPage, setFavoriteUsersCurrentPage] = useState(0);
+  const [favoriteUsersTotalPages, setFavoriteUsersTotalPages] = useState(1);
+
 
   const [inboxMessages, setInboxMessages] = useState([]);
   const [inboxCurrentPage, setInboxCurrentPage] = useState(0);
@@ -51,12 +55,25 @@ function App() {
     setUsersTotalPages(totalPages);
   }
 
+  const fetchFavoriteUsers = async (page) => {
+    const { users, totalPages } = await handleFetchFavoriteUserPage(page);
+    setFavoriteUsers(users);
+    setFavoriteUsersTotalPages(totalPages);
+  }
+
   useEffect(() => {
     if(usersCurrentPage > 0) {
       console.log(`Fetching users for page: ${usersCurrentPage}`);
       fetchUsers(usersCurrentPage);
   }
   }, [usersCurrentPage]);
+
+  useEffect(() => {
+    if(favoriteUsersCurrentPage > 0) {
+      console.log(`Fetching favorite users for page: ${favoriteUsersCurrentPage}`);
+      fetchFavoriteUsers(favoriteUsersCurrentPage);
+  }
+  }, [favoriteUsersCurrentPage]);
 
   const fetchInbox = async (page) => {
     const { messages, totalPages } = await handleFetchInboxPage(page);
@@ -113,9 +130,21 @@ function App() {
     }
   };
 
+  const handleFavoriteUsersNextPage = () => {
+    if (favoriteUsersCurrentPage < favoriteUsersTotalPages) {
+      setUsersCurrentPage(favoriteUsersCurrentPage + 1);
+    }
+  };
+
   const handleUsersPreviousPage = () => {
     if (usersCurrentPage > 1) {
       setUsersCurrentPage(usersCurrentPage - 1);
+    }
+  };
+
+  const handleFavoriteUsersPreviousPage = () => {
+    if (favoriteUsersCurrentPage > 1) {
+      setFavoriteUsersCurrentPage(favoriteUsersCurrentPage - 1);
     }
   };
 
@@ -162,6 +191,25 @@ function App() {
     });  
   };
 
+    // Define callback functions
+    const handleAddFavoriteUser = async (favorite_user) => {    
+      // Implementation will be added later
+      setLoading(true);
+      const uuid = uuidv4();
+
+      const data = {favorite_id: uuid, user_id: othent.getSyncUserDetails().sub, favorite_user_id: favorite_user.user_id};
+      message({ 
+        process: user.data_node_id,
+        signer: createDataItemSigner(await getSinger()),
+        data: JSON.stringify(data),
+        tags: [{ name: 'Action', value: 'AddFavoriteUser' }],
+      }).then((addFavoriteUserMsgId) => {
+            console.log("Add Favorite User Message ID", addFavoriteUserMsgId);
+          setLoading(false);  
+          fetchFavoriteUsers(favoriteUsersCurrentPage);
+      });  
+    };
+  
   const handleFetchUserPage = (page) => {
     return new Promise(async (resolve, reject) => {
       setLoading(true);
@@ -178,6 +226,33 @@ function App() {
           console.log("Fetched User Page", userPage);
           setLoading(false);
           resolve({users: userPage.users, totalPages: userPage.total_size});
+        } else {
+          setLoading(false);
+          reject("No user page found");
+        }
+      } catch (error) {
+        console.error("Error fetching user page:", error);
+        setLoading(false);
+        reject(error);
+      }
+    });
+  };
+
+  const handleFetchFavoriteUserPage = (page) => {
+    return new Promise(async (resolve, reject) => {
+      setLoading(true);
+      const data = { user_id: othent.getSyncUserDetails().sub, page: page, page_size: 5 };
+      try {
+        const txData = await dryrun({
+          process: user.data_node_id,
+          data: JSON.stringify(data),
+          tags: [{ name: 'Action', value: 'GetFavoriteUsers' }],
+        });
+        if(txData.Messages.length > 0) {
+          const userPage = JSON.parse(txData.Messages[0].Data);
+          console.log("Fetched User Page", userPage);
+          setLoading(false);
+          resolve({users: userPage.favorites, totalPages: userPage.total_size});
         } else {
           setLoading(false);
           reject("No user page found");
@@ -287,6 +362,10 @@ function App() {
 
   const ao_connect = async () => {
     const res = await othent.connect();
+    if(othent.getSyncUserDetails() === null) {
+      ao_disconnect();
+      ao_connect();
+    }
     console.log("Connect,\n", res);
     console.log('othent', othent.auth0)
     const clientPromise = await othent.auth0.auth0ClientPromise; 
@@ -304,6 +383,7 @@ function App() {
       setUser(userDetails);
       setLoading(false);
       setUsersCurrentPage(1);
+      setFavoriteUsersCurrentPage(1);
       setInboxCurrentPage(1);
       setOutboxCurrentPage(1);
     }
@@ -632,7 +712,10 @@ const ao_disconnect = async () => {
                   <UserRegistration onRegister={handleUserRegistration} />
                 </>
               )}            
-              <RegisteredUsers users={users} currentPage={usersCurrentPage} totalPages={Math.ceil(usersTotalPages / 5)} handleNextPage={handleUsersNextPage} handlePreviousPage={handleUsersPreviousPage} sendEncryptIntegerValue={sendEncryptIntegerValue}/>
+              <RegisteredUsers users={users} currentPage={usersCurrentPage} totalPages={Math.ceil(usersTotalPages / 5)} handleNextPage={handleUsersNextPage} handlePreviousPage={handleUsersPreviousPage} sendEncryptIntegerValue={sendEncryptIntegerValue}
+                                favoriteUsers={favoriteUsers} favoriteUsersCurrentPage={favoriteUsersCurrentPage} favoriteUsersTotalPages={Math.ceil(favoriteUsersTotalPages / 5)} 
+                                handleFavoriteUsersNextPage={handleFavoriteUsersNextPage} handleFavoriteUsersPreviousPage={handleFavoriteUsersPreviousPage} handleAddFavoriteUser={handleAddFavoriteUser} isDarkMode={false}
+              />
               <MessagesDashboard inboxMessages={inboxMessages} inboxCurrentPage={inboxCurrentPage} inboxTotalPages={Math.ceil(inboxTotalPages / 5)} handleInboxNextPage={handleInboxNextPage} handleInboxPreviousPage={handleInboxPreviousPage} sendReply={sendReply}
                                 outboxMessages={outboxMessages} outboxCurrentPage={outboxCurrentPage} outboxTotalPages={Math.ceil(outboxTotalPages / 5)} handleOutboxNextPage={handleOutboxNextPage} handleOutboxPreviousPage={handleOutboxPreviousPage} />
             </>

@@ -15,10 +15,10 @@ To start a new demo project, you need to start an AOS node with the following co
 aos project_name --module=GYrbbe0VbHim_7Hi6zrOpHQXrSQz07XNtwCnfbFo2I0
 ```
 
-In the AOS process, load the `orchestrator_node_api.lua` code with:
+In the AOS process, load the `orchestrator_process_api.lua` code with:
 
 ```bash
-.load process/orchestrator_node_api.lua
+.load process/orchestrator_process_api.lua
 ```
 
 After that, run the initialization command:

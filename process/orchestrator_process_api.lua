@@ -18,14 +18,24 @@ NODES = [[
 
 -- Users Table Definition
 USERS = [[
-  CREATE TABLE IF NOT EXISTS Users (
-    user_id TEXT PRIMARY KEY,    -- String ID
-    data_node_id TEXT NOT NULL,         -- Associated SQL node ID (not enforced with a foreign key in distributed setup)
-    crypto_node_id TEXT NOT NULL,         -- Associated FHE node ID (not enforced with a foreign key in distributed setup)
-    nickname TEXT,
-    schema_version TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+    CREATE TABLE IF NOT EXISTS Users (
+        user_id TEXT PRIMARY KEY,    -- String ID
+        data_node_id TEXT NOT NULL,  -- Associated SQL node ID (not enforced with a foreign key in distributed setup)
+        crypto_node_id TEXT NOT NULL, -- Associated FHE node ID (not enforced with a foreign key in distributed setup)
+        nickname TEXT UNIQUE,        -- Nickname must be unique
+        schema_version TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+]]
+
+-- UserFavorites Table Definition
+USER_FAVORITES = [[
+    CREATE TABLE IF NOT EXISTS UserFavorites (
+        favorite_id TEXT PRIMARY KEY,  -- String ID
+        user_id TEXT NOT NULL,         -- Associated user ID
+        favorite_user_id TEXT NOT NULL, -- ID of the favorite user
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 ]]
 
 -- UserOutbox Table Definition
@@ -92,7 +102,7 @@ function InitDb()
     db:exec(initial_orchestrator_schema_sql)
     InsertSchemaManagement("init_orchestrator_node", "v1.0", "orchestrator", initial_orchestrator_schema_sql, "Initial schema for orchestrator AO process")
   
-    local initial_user_schema_sql = USER_OUTBOX .. USER_INBOX .. USER_REPLIES
+    local initial_user_schema_sql = USER_FAVORITES .. USER_OUTBOX .. USER_INBOX .. USER_REPLIES
     InsertSchemaManagement("init_user_node", "v1.0", "user", initial_user_schema_sql, "Initial schema for user AO process")       
 end
     
@@ -120,6 +130,20 @@ end
 
 -- Function to register a user's nickname
 function RegisterUserNickname(user_id, nickname)
+    -- Check if the nickname already exists
+    local check_stmt = db:prepare([[
+        SELECT COUNT(*) FROM Users WHERE nickname = ?
+    ]])
+    check_stmt:bind_values(nickname)
+    check_stmt:step()
+    local count = check_stmt:get_value(0)
+    check_stmt:finalize()
+
+    if count > 0 then
+        return "Error: Nickname already exists"
+    end
+
+    -- Update the user's nickname if it is unique
     local stmt = db:prepare([[
         UPDATE Users
         SET nickname = ?
@@ -128,6 +152,8 @@ function RegisterUserNickname(user_id, nickname)
     stmt:bind_values(nickname, user_id)
     stmt:step()
     stmt:finalize()
+
+    return "Nickname registered successfully"
 end
 
 -- Function to get user data by user_id
@@ -427,13 +453,17 @@ Handlers.add(
         local nickname_data = json.decode(msg.Data)
 
         -- Register the user's nickname
-        RegisterUserNickname(nickname_data.user_id, nickname_data.nickname)
+        local message = RegisterUserNickname(nickname_data.user_id, nickname_data.nickname)
+        if message:sub(1, 5) == "Error" then
+            error(message)
+        else    
+            -- Send a response back to the caller
+            ao.send({
+                Target = msg.From,
+                Data = message .. " user_id: " .. nickname_data.user_id
+            })
+        end
 
-        -- Send a response back to the caller
-        ao.send({
-            Target = msg.From,
-            Data = "Nickname registered for user_id: " .. nickname_data.user_id
-        })
     end
 )
 

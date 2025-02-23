@@ -32,12 +32,12 @@ async function loadNodeScripts() {
 }
 
 async function loadUserApi() {
-    const user_node_api = fs.readFileSync('./process/user_node_api.lua', 'utf-8');
+    const user_process_api = fs.readFileSync('./process/user_process_api.lua', 'utf-8');
     const nodeApi = {
         node_type: "user",
-        script_name: "user_node_api.lua",
+        script_name: "user_process_api.lua",
         script_version: "v1.0",
-        script_content: user_node_api
+        script_content: user_process_api
     };
     const data = JSON.stringify(nodeApi);
     const msgId = await loadApi(data);
@@ -47,12 +47,12 @@ async function loadUserApi() {
 }
 
 async function loadFheApi() {
-    const fhe_node_api = fs.readFileSync('./process/fhe_node_api.lua', 'utf-8');
+    const fhe_process_api = fs.readFileSync('./process/fhe_process_api.lua', 'utf-8');
     const nodeApi = {
         node_type: "crypto",
-        script_name: "fhe_node_api.lua",
+        script_name: "fhe_process_api.lua",
         script_version: "v1.0",
-        script_content: fhe_node_api
+        script_content: fhe_process_api
     };
     const data = JSON.stringify(nodeApi);
     const msgId = await loadApi(data);
